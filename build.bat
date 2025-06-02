@@ -1,7 +1,4 @@
 @echo off
-REM 设置 CUDA DLL 路径（根据你电脑实际安装位置来改）
-set "CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8"
-set "PATH=%CUDA_PATH%\bin;%CUDA_PATH%\libnvvp;%PATH%"
 REM 启用 MSVC 编译环境
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
@@ -13,9 +10,9 @@ cl /EHsc /std:c++17 ^
     /I "E:\libtorch-win-shared-with-deps-2.7.0+cu128\libtorch\include" ^
     /I "E:\libtorch-win-shared-with-deps-2.7.0+cu128\libtorch\include\torch\csrc\api\include" ^
     "%SRC%" ^
-    /Fe:concise_transformer.exe ^
+    /Fe:main.exe ^
     /link /LIBPATH:"E:\libtorch-win-shared-with-deps-2.7.0+cu128\libtorch\lib" ^
     torch.lib torch_cpu.lib torch_cuda.lib c10.lib
 
 REM 编译成功后，新开一个命令行窗口执行main.exe，且窗口保持打开
-start cmd /k concise_transformer.exe
+start cmd /k main.exe

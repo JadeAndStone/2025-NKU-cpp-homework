@@ -3,7 +3,20 @@
 #include<iostream>
 #include<vector>
 #include"MNISTDataset.h"
+#include<Windows.h>
 using namespace std;
+void check_cuda_dlls() {
+    const char* dlls[] = {
+        "cudart64_128.dll",  // CUDA runtime
+        "nvcuda.dll",        // 驱动接口（由显卡驱动提供）
+        "torch_cuda.dll"     // libtorch 提供
+    };
+
+    for (const auto& name : dlls) {
+        HMODULE handle = LoadLibraryA(name);
+        std::cout << "[Check DLL] " << name << ": " << (handle ? "FOUND" : "NOT FOUND") << std::endl;
+    }
+}
 class Linear_blockImpl: public torch::nn::Module{
     torch::nn::Linear ln{nullptr};
     torch::nn::BatchNorm1d bn{nullptr};
@@ -60,10 +73,13 @@ int main()
     // output = torch::randn({ 3,3 }).to(device);
     // cout<<output<<endl;
     // cout << "Torch version: " << TORCH_VERSION << std::endl;
-    torch::DeviceType device=at::kCPU;
-    if(torch::cuda::is_available()){
-        device=at::kCUDA;
-    }
+    // check_cuda_dlls();
+    LoadLibraryA("cudart64_128.dll");     // CUDA runtime
+    LoadLibraryA("torch_cuda.dll");       // libtorch CUDA backend
+    LoadLibraryA("nvcuda.dll");           // NVIDIA driver
+    torch::Tensor dummy = torch::zeros({1}, torch::device(torch::kCUDA).dtype(torch::kFloat));
+    std::cout << "[Check] torch::cuda::is_available(): " << torch::cuda::is_available() << std::endl;
+    torch::DeviceType device=torch::cuda::is_available() ? at::kCUDA : at::kCPU;
     MLP net(784,10);
     net->to(device);
     auto train_raw_dataset=MNISTDataset(
@@ -88,11 +104,6 @@ int main()
     
     auto train_loader=dataloader(train_dataset),test_loader=dataloader(test_dataset);
 
-    // int count = 0;
-    // for (auto& batch : *data_loader) {
-    //     cout << "Got a batch, size: " << batch.data.sizes() << endl;
-    //     if (++count >= 3) break;
-    // }
     torch::optim::SGD optimizer(net->parameters(),0.01);
     for(int epoch=1;epoch<=10;epoch++){
         auto train_loss=torch::zeros(1,device);
@@ -121,6 +132,6 @@ int main()
         cout<<"test_accuracy: "<<(test_accuracy/num_test).item<float>()<<endl;
     }
     cout<<torch::cuda::is_available();
-    // system("echo %PATH%");
+    system("echo %PATH%");
     return 0;
 }
